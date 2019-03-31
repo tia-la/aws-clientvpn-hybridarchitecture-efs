@@ -1,0 +1,58 @@
+This is not a complete list of commands.  These commands are provided so that you can copy and paste the commands during the lab activity.
+
+aws configure: set region to us-east-1
+sudo yum update -y
+sudo yum install -y git
+git clone https://github.com/OpenVPN/easy-rsa.git
+cd easy-rsa/easyrsa3
+./easyrsa init-pki
+./easyrsa build-ca nopass
+./easyrsa build-server-full server nopass
+./easyrsa build-client-full client1.domain.tld nopass
+
+
+Make a directory for the certificates
+mkdir /home/cloud_user/certificates
+
+
+Create the CA, server and client certificates 
+cp pki/ca.crt /home/cloud_user/certificates
+cp pki/issued/server.crt /home/cloud_user/certificates
+cp pki/private/server.key /home/cloud_user/certificates
+cp pki/issued/client1.domain.tld.crt /home/cloud_user/certificates
+cp pki/private/client1.domain.tld.key /home/cloud_user/certificates
+
+
+Change to the certificates directory
+cd /home/cloud_user/certificates
+
+
+Import the certificates
+sudo aws acm import-certificate --certificate file://server.crt --private-key file://server.key --certificate-chain file://ca.crt --region us-east-1
+sudo aws acm import-certificate --certificate file://client1.domain.tld.crt --private-key file://client1.domain.tld.key --certificate-chain file://ca.crt --region us-east-1
+
+
+Export the client configuration (replace the endpoint id with the endpoint id from the Client VPN console)
+aws ec2 export-client-vpn-client-configuration --client-vpn-endpoint-id endpoint_id --output text>client-config.ovpn
+
+Append the client certificate and key to the open vpn config file
+cat >> client-config.ovpn 
+cert /path/client1.domain.tld.crt 
+key /path/client1.domain.tld.key 
+
+
+Install OpenVPN client
+sudo yum install -y openvpn
+
+Launch openvpn client using the config file
+sudo openvpn –config client-config.ovpn
+
+
+Make the mount directory
+sudo mkdir /mnt/efs
+
+Mount EFS
+sudo mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport mount-target-IP:/   /mnt/efs
+
+
+
