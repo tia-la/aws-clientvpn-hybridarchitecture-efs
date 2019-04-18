@@ -45,7 +45,7 @@ Install OpenVPN client
 sudo yum install -y openvpn
 
 Launch openvpn client using the config file
-sudo openvpn –config client-config.ovpn
+sudo openvpn --config client-config.ovpn
 
 
 Make the mount directory
